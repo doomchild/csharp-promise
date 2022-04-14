@@ -2,7 +2,7 @@
   "name": "csharp-promise",
   "description": "Typescript-like Promises for C#.",
   "title": "Promises",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "ciEnvironment": {
     "variables": [
       {
