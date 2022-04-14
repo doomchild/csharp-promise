@@ -1233,5 +1233,28 @@ public class PromiseTests
         Assert.Contains(actualValue, expectedValue);
       }
     }
+
+    public class RejectIf
+    {
+      [Fact]
+      public async void ItShouldRejectForAFailedPredicate()
+      {
+        IPromise<int> testPromise = Promise<int>.RejectIf(value => value % 2 == 0, value => new ArgumentException())(1);
+        
+        await Task.Delay(100);
+        
+        Assert.True(testPromise.IsRejected);
+      }
+
+      [Fact]
+      public async void ItShouldResolveForASuccessfulPredicate()
+      {
+        IPromise<int> testPromise = Promise<int>.RejectIf(value => value % 2 == 0, value => new ArgumentException())(2);
+        
+        await Task.Delay(100);
+        
+        Assert.True(testPromise.IsFulfilled);
+      }
+    }
   }
 }
