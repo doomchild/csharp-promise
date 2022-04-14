@@ -5,6 +5,7 @@
 *.suo
 *.user
 *.sln.docstates
+.vs/
 
 # Build results
 
@@ -131,3 +132,5 @@ $RECYCLE.BIN/
 .DS_Store
 
 _NCrunch*
+
+!ci/bin/
