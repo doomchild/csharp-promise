@@ -161,8 +161,20 @@ public class Promise<T> : IPromise<T>
   /// <param name="exception">The <see cref="Exception"/> to convert into an IPromise.</param>
   /// <returns>The created IPromise.</returns>
   public static IPromise<T> Reject(Exception exception) => new Promise<T>(Task.FromException<T>(exception));
-  
-  /// <inheritdoc />
+
+  /// <summary>
+  /// Returns a function that that rejects with the result of the <paramref name="rejectionSupplier"/> if the
+  /// <paramref name="predicate"/> returns <code>true</code>.
+  /// </summary>
+  /// <param name="predicate">Determines whether or not to reject the IPromise.</param>
+  /// <param name="rejectionSupplier">Provides the <see cref="Exception"/> to reject.</param>
+  /// <returns>A <see cref="Func{T}"/> that takes a value and returns an <see cref="IPromise{T}"/>.</returns>
+  public static Func<T, IPromise<T>> RejectIf(Predicate<T> predicate, Func<T, Exception> rejectionSupplier) => 
+    value => predicate(value) 
+      ? Resolve(value) 
+      : Reject(rejectionSupplier(value));
+
+    /// <inheritdoc />
   public IPromise<T> Catch(Func<Exception, T> onRejected) => IsFulfilled 
     ? this 
     : Then(
