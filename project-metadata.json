@@ -1,0 +1,24 @@
+{
+  "name": "csharp-promise",
+  "description": "Typescript-like Promises for C#.",
+  "title": "Promises",
+  "version": "0.1.0",
+  "ciEnvironment": {
+    "variables": [
+      {
+        "name": "NUGET_API_KEY",
+        "description": "NuGet API Key",
+        "required": true,
+        "secret": true,
+        "defaultValue": null
+      },
+      {
+        "name": "NUGET_SOURCE",
+        "description": "NuGet Source URL",
+        "required": true,
+        "secret": false,
+        "defaultValue": "https://api.nuget.org"
+      }
+    ]
+  }
+}
