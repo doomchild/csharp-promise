@@ -37,6 +37,19 @@ To create a resolved `Promise` from a raw value, `Resolve` is the easiest way to
 
 To create a rejected `Promise` from an exception object, `Reject` is the easiest way to go.
 
+##### Promise<T>.RejectIf
+
+`RejectIf` can be used to create a `Promise` based on some function, or can be used for validation, as follows:
+
+```c#
+Promise<int>.Resolve(1)
+  .Then(Promise<int>.RejectIf(value => value % 2 == 0, value => new ArgumentException($"{nameof(value)} was not even!")))
+  .Tap(
+    value => _logger.LogInformation("Value was even: {Value}", value),
+    exception => _logger.LogException(exception)
+  );
+```
+
 ##### Constructor
 
 The `Promise<T>` constructor takes an `Action<Action<T>, Action<Exception>>` to allow callback-oriented code to resolve or reject a value/exception in order to enter a `Promise<T>`-oriented workflow.  This is analogous to Javascript/Typescript `Promise`s, where you might occasionally need to write something along the lines of:
@@ -57,7 +70,7 @@ new Promise((resolve, reject) => {
 
 Once a `Promise<T>` has been created, successive operations can be chained using the `Then` method.
 
-```csharp
+```c#
 HttpClient client = new ();
 
 Promise<string>.Resolve("https://www.google.com/")
@@ -69,7 +82,7 @@ Promise<string>.Resolve("https://www.google.com/")
 
 When a `Promise<T>` enters a rejected state, the `Catch` method can be used to deal with the exception.
 
-```csharp
+```c#
 HttpClient client = new ();
 
 Promise<string>.Resolve("not-a-url")
@@ -82,7 +95,7 @@ Promise<string>.Resolve("not-a-url")
 
 The `IfFulfilled` and `IfRejected` methods can be used to perform side effects such as logging when the `Promise<T>` is in the fulfilled or rejected state, respectively.
 
-```csharp
+```c#
 HttpClient client = new ();
 
 Promise<string>.Resolve("https://www.google.com/")
@@ -91,7 +104,7 @@ Promise<string>.Resolve("https://www.google.com/")
   .Then(response => response.StatusCode);
 ```
 
-```csharp
+```c#
 HttpClient client = new ();
 
 Promise<string>.Resolve("not-a-url")
@@ -103,7 +116,7 @@ Promise<string>.Resolve("not-a-url")
 
 The `Tap` method takes both an `onFulfilled` and `onRejected` `Action` in the event that you want to perform some side effect on both sides of the `Promise` at a single time.
 
-```csharp
+```c#
 HttpClient client = new ();
 
 Promise<string>.Resolve(someExternalUrl)
