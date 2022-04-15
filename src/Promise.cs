@@ -139,7 +139,14 @@ public class Promise<T> : IPromise<T>
   /// <returns>A fulfillment or rejection of the first <see cref="Task{T}"/> to finish running.</returns>
   public static IPromise<T> Any(IEnumerable<Func<Task<T>>> suppliers) => Any(suppliers.Select(Invoke));
 
-  
+  /// <summary>
+  /// Takes an <see cref="IEnumerable{T}"/> of <see cref="IPromise{T}"/> and returns an IPromise of the result of the
+  /// first Promise to finish.
+  /// </summary>
+  /// <param name="promises"></param>
+  /// <returns>A fulfillment or rejection of the first <see cref="IPromise{T}"/> to finish running.</returns>
+  public static IPromise<T> Any(IEnumerable<IPromise<T>> promises) => Any(promises.Select(async p => await p));
+
   /// /// <summary>
   /// Creates an IPromise from a <see cref="Task{T}"/>.
   /// </summary>

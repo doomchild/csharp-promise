@@ -1193,7 +1193,7 @@ public class PromiseTests
 
         await Task.Delay(100);
 
-        Assert.True(testPromise.IsRejected);
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await testPromise);
       }
 
       [Fact]
@@ -1231,6 +1231,44 @@ public class PromiseTests
         string actualValue = await Promise<string>.Any(testTasks);
 
         Assert.Contains(actualValue, expectedValue);
+      }
+
+      [Fact]
+      public async void ItShouldTakeAnIEnumerableOfPromises()
+      {
+        List<Promise<string>> testPromises = new()
+        {
+          (Promise<string>) Promise<string>.Resolve(Task.Factory.StartNew(() =>
+          {
+            Task.Delay(500).GetAwaiter().GetResult();
+            return "1";
+          })),
+          (Promise<string>) Promise<string>.Resolve(Task.Factory.StartNew(() =>
+          {
+            Task.Delay(500).GetAwaiter().GetResult();
+            return "2";
+          })),
+          (Promise<string>) Promise<string>.Resolve(Task.Factory.StartNew(() =>
+          {
+            Task.Delay(500).GetAwaiter().GetResult();
+            return "3";
+          })),
+          (Promise<string>) Promise<string>.Resolve(Task.Factory.StartNew(() =>
+          {
+            Task.Delay(1).GetAwaiter().GetResult();
+            return "4";
+          })),
+          (Promise<string>) Promise<string>.Resolve(Task.Factory.StartNew(() =>
+          {
+            Task.Delay(500).GetAwaiter().GetResult();
+            return "5";
+          }))
+        };
+        //IEnumerable<string> expectedValue = new List<string> { "1", "2", "3", "4", "5" };
+        string expectedValue = "4";
+        string actualValue = await Promise<string>.Any(testPromises);
+
+        Assert.Equal(expectedValue, actualValue);
       }
     }
 
