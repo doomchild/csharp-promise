@@ -1125,112 +1125,192 @@ public class PromiseTests
 
     public class Any
     {
-      [Fact]
-      public async void ItShouldReturnASingleResolvedValue()
+      public class FromTasks
       {
-        List<Func<Task<string>>> testTasks = new()
+        [Fact]
+        public async void ItShouldReturnASingleResolvedValue()
         {
-          () => Task.Factory.StartNew(() =>
+          List<Func<Task<string>>> testTasks = new()
           {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "1";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "2";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "3";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "4";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "5";
-          }),
-        };
-        IEnumerable<string> expectedValue = new List<string> { "1", "2", "3", "4", "5" };
-        string actualValue = await Promise<string>.Any(testTasks);
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "1";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "2";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "3";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "4";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "5";
+            })
+          };
+          IEnumerable<string> expectedValue = new List<string> { "1", "2", "3", "4", "5" };
+          string actualValue = await Promise<string>.Any(testTasks);
 
-        Assert.Contains(actualValue, expectedValue);
+          Assert.Contains(actualValue, expectedValue);
+        }
+
+        [Fact]
+        public async void ItShouldReturnARejectionIfTheWinningTaskThrows()
+        {
+          List<Func<Task<string>>> testTasks = new()
+          {
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(100).GetAwaiter().GetResult();
+              return "1";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(100).GetAwaiter().GetResult();
+              return "2";
+            }),
+            () => Task<string>.Factory.StartNew(() => throw new ArgumentNullException()),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(100).GetAwaiter().GetResult();
+              return "4";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(100).GetAwaiter().GetResult();
+              return "5";
+            })
+          };
+          IPromise<string> testPromise = Promise<string>.Any(testTasks);
+
+          await Task.Delay(100);
+
+          await Assert.ThrowsAsync<ArgumentNullException>(async () => await testPromise);
+        }
+
+        [Fact]
+        public async void ItShouldNotThrowIfAResolutionHappensFirst()
+        {
+          List<Func<Task<string>>> testTasks = new()
+          {
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "1";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "2";
+            }),
+            () => Task<string>.Factory.StartNew(() =>
+            {
+              Task.Delay(100).GetAwaiter().GetResult();
+              throw new ArgumentNullException();
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "4";
+            }),
+            () => Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "5";
+            })
+          };
+          IEnumerable<string> expectedValue = new List<string> { "1", "2", "3", "4", "5" };
+          string actualValue = await Promise<string>.Any(testTasks);
+
+          Assert.Contains(actualValue, expectedValue);
+        }
       }
 
-      [Fact]
-      public async void ItShouldReturnARejectionIfTheWinningTaskThrows()
+      public class FromPromises
       {
-        List<Func<Task<string>>> testTasks = new()
+        [Fact]
+        public async void ItShouldTakeAnIEnumerableOfPromises()
         {
-          () => Task.Factory.StartNew(() =>
+          List<Promise<string>> testPromises = new()
           {
-            Task.Delay(100).GetAwaiter().GetResult();
-            return "1";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(100).GetAwaiter().GetResult();
-            return "2";
-          }),
-          () => Task<string>.Factory.StartNew(() => throw new ArgumentNullException()),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(100).GetAwaiter().GetResult();
-            return "4";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(100).GetAwaiter().GetResult();
-            return "5";
-          })
-        };
-        IPromise<string> testPromise = Promise<string>.Any(testTasks);
+            (Promise<string>)Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "1";
+            })),
+            (Promise<string>)Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "2";
+            })),
+            (Promise<string>)Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "3";
+            })),
+            (Promise<string>)Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "4";
+            })),
+            (Promise<string>)Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "5";
+            }))
+          };
+          string expectedValue = "4";
+          string actualValue = await Promise<string>.Any(testPromises);
 
-        await Task.Delay(100);
-
-        Assert.True(testPromise.IsRejected);
-      }
-
-      [Fact]
-      public async void ItShouldNotThrowIfAResolutionHappensFirst()
-      {
-        List<Func<Task<string>>> testTasks = new()
+          Assert.Equal(expectedValue, actualValue);
+        }
+        
+        [Fact]
+        public async void ItShouldReturnASingleResolvedValue()
         {
-          () => Task.Factory.StartNew(() =>
+          List<Func<IPromise<string>>> testPromises = new()
           {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "1";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "2";
-          }),
-          () => Task<string>.Factory.StartNew(() =>
-          {
-            Task.Delay(100).GetAwaiter().GetResult();
-            throw new ArgumentNullException();
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "4";
-          }),
-          () => Task.Factory.StartNew(() =>
-          {
-            Task.Delay(1).GetAwaiter().GetResult();
-            return "5";
-          })
-        };
-        IEnumerable<string> expectedValue = new List<string> { "1", "2", "3", "4", "5" };
-        string actualValue = await Promise<string>.Any(testTasks);
+            () => Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "1";
+            })),
+            () => Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "2";
+            })),
+            () => Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(1).GetAwaiter().GetResult();
+              return "3";
+            })),
+            () => Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "4";
+            })),
+            () => Promise<string>.Resolve(Task.Factory.StartNew(() =>
+            {
+              Task.Delay(500).GetAwaiter().GetResult();
+              return "5";
+            }))
+          };
+          string expectedValue = "3";
+          string actualValue = await Promise<string>.Any(testPromises);
 
-        Assert.Contains(actualValue, expectedValue);
+          Assert.Equal(expectedValue, actualValue);
+        }
       }
     }
 
