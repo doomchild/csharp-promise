@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -262,12 +262,12 @@ public class PromiseTests
       }
 
       [Fact]
-      public void ItShouldRethrowForRejections()
+      public async void ItShouldRethrowForRejections()
       {
         IPromise<int> testPromise = Promise<string>.Reject(new ArgumentNullException("abcde"))
           .Then(value => value.Length);
 
-        Assert.ThrowsAsync<ArgumentNullException>(async () => await testPromise);
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await testPromise);
       }
       
       [Fact]
@@ -292,11 +292,11 @@ public class PromiseTests
       }
 
       [Fact]
-      public void ItShouldThrowRejectedException()
+      public async void ItShouldThrowRejectedException()
       {
         Func<string, int> testFunc = _ => throw new ArgumentException();
 
-        Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
       }
     }
 
@@ -395,11 +395,11 @@ public class PromiseTests
       }
 
       [Fact]
-      public void ItShouldThrowRejectedException()
+      public async void ItShouldThrowRejectedException()
       {
         Func<string, Task<int>> testFunc = _ => throw new ArgumentException();
 
-        Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
       }
 
       [Fact]
@@ -418,7 +418,7 @@ public class PromiseTests
       }
 
       [Fact]
-      public void ItShouldThrowRejectedExceptionFromAsync()
+      public async void ItShouldThrowRejectedExceptionFromAsync()
       {
         Func<string, Task<int>> testFunc = async _ =>
         {
@@ -426,7 +426,7 @@ public class PromiseTests
           throw new ArgumentException();
         };
 
-        Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
       }
       
       [Fact]
@@ -443,7 +443,7 @@ public class PromiseTests
       }
 
       [Fact]
-      public void ItShouldCaptureTaskCancellation()
+      public async void ItShouldCaptureTaskCancellation()
       {
         HttpClient testHttpClient = new MockHttpBuilder()
           .WithHandler(messageCaseBuilder => messageCaseBuilder.AcceptAll()
@@ -451,11 +451,13 @@ public class PromiseTests
           )
           .BuildHttpClient();
         ;
-        CancellationTokenSource testTokenSource = new(-1);
+        CancellationTokenSource testTokenSource = new();
+        testTokenSource.Cancel();
+
         IPromise<string> testPromise = Promise<string>.Resolve("http://anything.anywhere")
           .Then(async url => await testHttpClient.GetStringAsync(url, testTokenSource.Token));
 
-        Assert.ThrowsAsync<TaskCanceledException>(async () => await testPromise);
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await testPromise);
       }
     }
 
@@ -554,11 +556,11 @@ public class PromiseTests
       }
 
       [Fact]
-      public void ItShouldThrowRejectedException()
+      public async void ItShouldThrowRejectedException()
       {
         Func<string, IPromise<int>> testFunc = _ => throw new ArgumentException();
 
-        Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
       }
       
       [Fact]
@@ -671,11 +673,11 @@ public class PromiseTests
       }
 
       [Fact]
-      public void ItShouldThrowRejectedException()
+      public async void ItShouldThrowRejectedException()
       {
         Func<string, Task<IPromise<int>>> testFunc = _ => throw new ArgumentException();
 
-        Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await Promise<string>.Resolve("12345").Then(testFunc));
       }
       
       [Fact]
