@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -70,7 +70,7 @@ public class Promise<T> : IPromise<T>
     try
     {
       executor(
-        value => _task = Task.Factory.StartNew(() => value.GetAwaiter().GetResult()),
+        value => _task = Task.Factory.StartNew(async () => await value).Unwrap(),
         exception => _task = Task.FromException<T>(exception)
       );
     }
@@ -106,7 +106,8 @@ public class Promise<T> : IPromise<T>
   /// <returns>A fulfillment of all of the <see cref="Task{T}"/> inputs, or a rejection if any <see cref="Task{T}"/>
   /// fails.</returns>
   public static IPromise<IEnumerable<T>> All(IEnumerable<Task<T>> tasks) => new Promise<IEnumerable<T>>(
-    Task.WhenAll(tasks).ContinueWith(task => task.GetAwaiter().GetResult().AsEnumerable())
+    Task.WhenAll(tasks).ContinueWith(async task => (await task).AsEnumerable())
+    .Unwrap()
   );
 
   /// <summary>
@@ -119,7 +120,7 @@ public class Promise<T> : IPromise<T>
   /// <returns>A fulfillment of all of the <see cref="Task{T}"/> inputs, or a rejection if any <see cref="Task{T}"/>
   /// fails.</returns>
   public static IPromise<IEnumerable<T>> All(IEnumerable<Func<Task<T>>> suppliers) => All(suppliers.Select(Invoke));
-  
+
   /// <summary>
   /// Takes an <see cref="IEnumerable{T}"/> of <see cref="Task{T}"/> and returns an IPromise of the result of the first
   /// <see cref="Task{T}"/> to finish.
@@ -127,7 +128,7 @@ public class Promise<T> : IPromise<T>
   /// <param name="tasks">The <see cref="IEnumerable{T}"/> containing the <see cref="Task{T}"/>s that will race.</param>
   /// <returns>A fulfillment or rejection of the first <see cref="Task{T}"/> to finish running.</returns>
   public static IPromise<T> Any(IEnumerable<Task<T>> tasks) => Resolve(Task.WhenAny(tasks)
-    .ContinueWith(task => task.GetAwaiter().GetResult().GetAwaiter().GetResult())
+    .ContinueWith(async task => await (await task)).Unwrap()
   );
 
   /// <summary>
@@ -266,17 +267,17 @@ public class Promise<T> : IPromise<T>
   [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public IPromise<TNext> Then<TNext>(Func<T, Task<TNext>> onFulfilled, Func<Exception, Task<TNext>> onRejected) =>
     new Promise<TNext>(_task.Fold(
-      exception => onRejected(exception).GetAwaiter().GetResult(), 
-      value => onFulfilled(value).GetAwaiter().GetResult()
-    ));
+      async exception => await onRejected(exception), 
+      async value => await onFulfilled(value)
+    ).Unwrap());
 
   /// <inheritdoc />
   public IPromise<TNext> Then<TNext>(
     Func<T, IPromise<TNext>> onFulfilled,
     Func<Exception, IPromise<TNext>> onRejected
   ) => Then(
-    value => onFulfilled(value).GetAwaiter().GetResult(),
-    exception => onRejected(exception).GetAwaiter().GetResult()
+    async value => await onFulfilled(value),
+    async exception => await onRejected(exception)
   );
 
   /// <inheritdoc />
@@ -285,9 +286,9 @@ public class Promise<T> : IPromise<T>
     Func<T, Task<IPromise<TNext>>> onFulfilled,
     Func<Exception, Task<IPromise<TNext>>> onRejected
   ) => new Promise<TNext>(_task.Fold(
-    exception => onRejected(exception).GetAwaiter().GetResult().GetAwaiter().GetResult(), 
-    value => onFulfilled(value).GetAwaiter().GetResult().GetAwaiter().GetResult()
-  ));
+    async exception => await await onRejected(exception), 
+    async value => await await onFulfilled(value)
+  ).Unwrap());
 
   private IPromise<TNext> ThenRightRawLeftTask<TNext>(
     Func<T, TNext> onFulfilled,
