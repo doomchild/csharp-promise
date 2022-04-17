@@ -27,11 +27,13 @@ public class Promise<T> : IPromise<T>
   /// <param name="executor">The Action that will receive functions for Promise fulfillment and rejection.</param>
   public Promise(Action<Action<T>, Action<Exception>> executor)
   {
+    TaskCompletionSource<T> tcs = new();
+
     try
     {
       executor(
-        value => _task = Task.FromResult(value),
-        exception => _task = Task.FromException<T>(exception)
+        value => { tcs.SetResult(value); _task = tcs.Task; },
+        exception => { tcs.SetException(exception); _task = tcs.Task; }
       );
     }
     catch (Exception exception)
@@ -47,11 +49,13 @@ public class Promise<T> : IPromise<T>
   /// <param name="executor">The Action that will receive functions for Promise fulfillment and rejection.</param>
   public Promise(Action<Action<Task<T>>, Action<Exception>> executor)
   {
+    TaskCompletionSource<T> tcs = new();
+
     try
     {
       executor(
         value => _task = value,
-        exception => _task = Task.FromException<T>(exception)
+        exception => { tcs.SetException(exception); _task = tcs.Task; }
       );
     }
     catch (Exception exception)
@@ -67,11 +71,13 @@ public class Promise<T> : IPromise<T>
   /// <param name="executor">The Action that will receive functions for Promise fulfillment and rejection.</param>
   public Promise(Action<Action<IPromise<T>>, Action<Exception>> executor)
   {
+    TaskCompletionSource<T> tcs = new();
+
     try
     {
       executor(
-        value => _task = Task.Factory.StartNew(async () => await value).Unwrap(),
-        exception => _task = Task.FromException<T>(exception)
+        async value => { tcs.SetResult(await value); _task = tcs.Task; },
+        exception => { tcs.SetException(exception); _task = tcs.Task; }
       );
     }
     catch (Exception exception)
