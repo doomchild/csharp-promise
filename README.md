@@ -2,6 +2,10 @@
 
 A Typescript-like Promise library for .NET.
 
+# NOTE
+
+This library is being deprecated in favor of [doomchild/task-chaining][], so you should probably switch to that.  The reason for the deprecation is because this library needlessly wraps `Task` instances in a `Promise` object that just proxies down into the `Task` without actually doing anything useful.  The other library is also less confusing in its overloads, because it only needs to handle raw values and `Task`s instead of needing to handle three different possibilities (raw, `Promise`-wrapped, and `Task`-wrapped).  It's just generally better.
+
 ## Rationale
 
 Asynchronous code (particularly in C#) typically relies on using the `async`/`await` feature introduced in C# 5.0.  This has a lot of benefits, but it unfortunately tends to push code into an imperative style.  This library aims to make writing asychronous functional code easier, cleaner, and less error-prone.
@@ -143,4 +147,5 @@ This method takes an `IEnumerable<Task<T>` of existing `Task<T>` instances or an
 
 Occasionally you need to escape from the world of `Promise`, either because existing code requires a raw value or `Task`, or because you're starting a workflow that you want separated from the current one.  In these cases, you should `await` your `IPromise<T>` instance.  This will return a `Task<T>` if the `Promise` was in a fulfilled state, and will throw the exception contained in a rejected state.  Generally, this is something you would do at the top level of a program, or anywhere that you need to return something to framework code (like a WebApi controller).
 
+[doomchild/task-chaining]: https://github.com/doomchild/task-chaining
 [nuget.org]: https://www.nuget.org/packages/Jds.LanguageExt.Extras/
